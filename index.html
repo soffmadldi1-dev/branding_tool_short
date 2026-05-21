@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNS 한 줄 브랜딩 카드 생성기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;padding:0;background:#0D1117;font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;min-height:100vh}
+input,textarea,button{font-family:inherit}
+textarea{resize:vertical}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
+input:focus,textarea:focus{outline:none}
+::placeholder{color:#555}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useMemo, useCallback } = React;
+
+/* ── Design tokens (dark theme) ─────────────────────── */
+const T = {
+  bg:     "#0D1117",
+  card:   "#161B22",
+  card2:  "#21262D",
+  border: "#30363D",
+  ink:    "#E6EDF3",
+  muted:  "#8B949E",
+  faint:  "#484F58",
+  accent: "#58A6FF",
+  accentDim: "rgba(88,166,255,0.12)",
+  gold:   "#D29922",
+  goldDim:"rgba(210,153,34,0.12)",
+  good:   "#3FB950",
+  goodDim:"rgba(63,185,80,0.12)",
+};
+
+/* ── Steps ───────────────────────────────────────────── */
+const STEPS = [
+  { id:1, label:"나는 누구인가", sub:"직업·역할·숫자" },
+  { id:2, label:"지금 하고 있는 것", sub:"활동·성과·숫자" },
+  { id:3, label:"내 메시지", sub:"철학·타겟·차별점" },
+  { id:4, label:"브랜딩 카드 생성", sub:"Claude 프롬프트 완성" },
+];
+
+const INIT = {
+  name:"", brandName:"", role:"", years:"", lifeRole:"",
+  doing1:"", doing1period:"", doing2:"", doing2num:"",
+  achievement:"",
+  target:"", message:"", diff:"", style:"",
+};
+
+function setIn(obj, key, val) {
+  var next = Object.assign({}, obj);
+  next[key] = val;
+  return next;
+}
+
+/* ── Components ──────────────────────────────────────── */
+function F({label, hint, req, children}) {
+  return (
+    <div style={{marginBottom:18}}>
+      <label style={{display:"block",marginBottom:6}}>
+        <span style={{fontWeight:600,color:T.ink,fontSize:13}}>{label}</span>
+        {req && <span style={{color:T.accent,marginLeft:3}}>*</span>}
+        {hint && <span style={{color:T.muted,fontSize:11,marginLeft:8}}>{hint}</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const IS = {
+  width:"100%", border:"1px solid "+T.border, borderRadius:8,
+  padding:"10px 14px", fontSize:13, color:T.ink, background:T.card2,
+  lineHeight:1.65, transition:"border-color 0.15s",
+};
+
+function TI({val, set, ph}) {
+  return (
+    <input type="text" value={val}
+      onChange={function(e){set(e.target.value);}} placeholder={ph}
+      style={IS}
+      onFocus={function(e){e.target.style.borderColor=T.accent;}}
+      onBlur={function(e){e.target.style.borderColor=T.border;}}
+    />
+  );
+}
+function TA({val, set, ph, rows}) {
+  return (
+    <textarea value={val} rows={rows||3}
+      onChange={function(e){set(e.target.value);}} placeholder={ph}
+      style={IS}
+      onFocus={function(e){e.target.style.borderColor=T.accent;}}
+      onBlur={function(e){e.target.style.borderColor=T.border;}}
+    />
+  );
+}
+
+/* example pill */
+function Eg({text}) {
+  return (
+    <span style={{display:"inline-block",background:T.accentDim,color:T.accent,fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:100,marginRight:6,marginBottom:4,cursor:"default"}}>
+      {text}
+    </span>
+  );
+}
+
+/* ── Step screens ────────────────────────────────────── */
+function S1({d,u}) {
+  return (
+    <>
+      <div style={{marginBottom:28}}>
+        <div style={{color:T.accent,fontWeight:700,fontSize:10,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6}}>STEP 01</div>
+        <h2 style={{fontWeight:800,fontSize:24,color:T.ink,margin:"0 0 8px",letterSpacing:"-0.02em"}}>나는 누구인가</h2>
+        <p style={{color:T.muted,fontSize:13,margin:0,lineHeight:1.7}}>
+          가장 임팩트 있는 브랜딩은 <strong style={{color:T.ink}}>"이 사람은 뭐 하는 사람이야?"</strong>를 3초 안에 답하는 겁니다.<br/>
+          직업·역할·숫자를 구체적으로 적을수록 카피가 날카로워집니다.
+        </p>
+      </div>
+
+      <div style={{background:T.card2,border:"1px solid "+T.border,borderRadius:10,padding:14,marginBottom:24}}>
+        <div style={{color:T.gold,fontSize:11,fontWeight:700,marginBottom:8}}>✦ 참고 예시 — @bookcreation_ 스타일</div>
+        <div style={{color:T.ink,fontSize:13,lineHeight:2}}>
+          🌙 밤 9시, 아이들 재우고 시작되는 두 번째 하루<br/>
+          📚 HRD 14년차 | 딸둘 아빠 | 전자책 3권<br/>
+          ✏️ 하루 500자, 2년째 기록 중<br/>
+          ☀️ 매일 1%씩, 결국 다른 사람이 됩니다
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+        <F label="이름 (본명 또는 닉네임)" req>
+          <TI val={d.name} set={function(v){u("name",v);}} ph="예: 홍요셉 / 요셉쌤"/>
+        </F>
+        <F label="브랜드명 (SNS 계정명)" hint="없으면 이름으로">
+          <TI val={d.brandName} set={function(v){u("brandName",v);}} ph="예: bookcreation_ / 딸둘아빠"/>
+        </F>
+      </div>
+
+      <F label="직업·역할 (1~2가지)" req hint="구체적인 직함이나 분야">
+        <TI val={d.role} set={function(v){u("role",v);}} ph="예: HRD 교육기획자 / 퍼스널브랜딩 강사 / 마케터"/>
+      </F>
+
+      <F label="연차·기간 (숫자 포함)" req hint="이 숫자 하나가 신뢰를 만듭니다">
+        <TI val={d.years} set={function(v){u("years",v);}} ph="예: 14년차 / 3년째 / 2022년부터"/>
+      </F>
+
+      <F label="라이프 역할 키워드" hint="직업 외에 나를 설명하는 한두 가지">
+        <div style={{marginBottom:8}}>
+          <Eg text="딸둘 아빠"/><Eg text="워킹맘"/><Eg text="3040 직장인"/>
+          <Eg text="야간 대학원생"/><Eg text="부업 N잡러"/><Eg text="늦깎이 창업가"/>
+        </div>
+        <TI val={d.lifeRole} set={function(v){u("lifeRole",v);}} ph="예: 딸둘 아빠 / 워킹맘 / 퇴근 후 작가"/>
+      </F>
+    </>
+  );
+}
+
+function S2({d,u}) {
+  return (
+    <>
+      <div style={{marginBottom:28}}>
+        <div style={{color:T.accent,fontWeight:700,fontSize:10,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6}}>STEP 02</div>
+        <h2 style={{fontWeight:800,fontSize:24,color:T.ink,margin:"0 0 8px",letterSpacing:"-0.02em"}}>지금 하고 있는 것</h2>
+        <p style={{color:T.muted,fontSize:13,margin:0,lineHeight:1.7}}>
+          "말만 하는 사람"과 "하고 있는 사람"의 차이는 <strong style={{color:T.ink}}>현재진행형 숫자</strong>입니다.<br/>
+          기간·횟수·결과물을 구체적으로 적을수록 팔로워가 생깁니다.
+        </p>
+      </div>
+
+      <F label="지금 꾸준히 하고 있는 것 #1" req hint="기간 포함">
+        <TI val={d.doing1} set={function(v){u("doing1",v);}} ph="예: 매일 500자 글쓰기 / 매일 독서 30분 / 주 3회 운동"/>
+      </F>
+      <F label="얼마나 됐나요?" req hint="숫자로">
+        <TI val={d.doing1period} set={function(v){u("doing1period",v);}} ph="예: 2년째 / 730일째 / 6개월째"/>
+      </F>
+
+      <F label="지금 하고 있는 것 #2 (선택)" hint="두 번째 활동이 있다면">
+        <TI val={d.doing2} set={function(v){u("doing2",v);}} ph="예: 전자책 집필 / 강의 준비 / 포트폴리오 제작"/>
+      </F>
+      <F label="수치화 가능한 성과·결과물" req hint="숫자가 없으면 설득이 안 됩니다">
+        <div style={{marginBottom:8}}>
+          <Eg text="전자책 3권"/><Eg text="팔로워 4천"/><Eg text="강의 100회"/>
+          <Eg text="수강생 3000명"/><Eg text="블로그 100만뷰"/><Eg text="저서 출간"/>
+        </div>
+        <TI val={d.achievement} set={function(v){u("achievement",v);}} ph="예: 전자책 3권 출간 / 팔로워 4,000명 / 강의 100차수 기획"/>
+      </F>
+    </>
+  );
+}
+
+function S3({d,u}) {
+  return (
+    <>
+      <div style={{marginBottom:28}}>
+        <div style={{color:T.accent,fontWeight:700,fontSize:10,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6}}>STEP 03</div>
+        <h2 style={{fontWeight:800,fontSize:24,color:T.ink,margin:"0 0 8px",letterSpacing:"-0.02em"}}>내 메시지</h2>
+        <p style={{color:T.muted,fontSize:13,margin:0,lineHeight:1.7}}>
+          팔로우 버튼을 누르는 이유는 정보가 아니라 <strong style={{color:T.ink}}>"이 사람과 함께 성장하고 싶다"</strong>는 감각입니다.<br/>
+          나를 팔로우해야 하는 이유를 한 줄로 만들어 봅니다.
+        </p>
+      </div>
+
+      <F label="내 콘텐츠를 보면 좋을 타겟" req hint="구체적인 사람을 떠올려서">
+        <div style={{marginBottom:8}}>
+          <Eg text="퇴근 후 뭔가 하고 싶은 직장인"/><Eg text="취업 준비하는 대학생"/>
+          <Eg text="부업 시작하려는 30대"/><Eg text="글쓰기 시작하는 초보자"/>
+        </div>
+        <TI val={d.target} set={function(v){u("target",v);}} ph="예: 육퇴 후 자기계발을 시작하고 싶은 30~40대 직장인"/>
+      </F>
+
+      <F label="내가 전달하고 싶은 핵심 메시지 (철학)" req hint="당신 콘텐츠의 관통 주제">
+        <TA val={d.message} set={function(v){u("message",v);}} ph="예: 거창한 목표가 없어도 됩니다. 매일 1%씩 달라지면 1년 뒤 완전히 다른 사람이 됩니다. 바쁜 직장인도 할 수 있습니다." rows={3}/>
+      </F>
+
+      <F label="나만의 차별점" req hint="비슷한 계정들과 다른 한 가지">
+        <TI val={d.diff} set={function(v){u("diff",v);}} ph="예: 이론이 아닌 14년 HRD 현장 + 육아 병행 실전 / 강사·작가·직장인을 동시에 살아내는 솔직한 기록"/>
+      </F>
+
+      <F label="글 쓰는 스타일·톤" hint="어떤 분위기로 쓰고 싶나요?">
+        <div style={{marginBottom:8}}>
+          <Eg text="따뜻하고 진솔한"/><Eg text="직설적이고 실용적인"/>
+          <Eg text="감성적인"/><Eg text="전문적이고 신뢰감 있는"/><Eg text="유머 있는"/>
+        </div>
+        <TI val={d.style} set={function(v){u("style",v);}} ph="예: 따뜻하고 솔직한 / 직설적이고 실용적인 / 전문적이면서 친근한"/>
+      </F>
+    </>
+  );
+}
+
+function buildPrompts(d) {
+  var name   = d.name || "나";
+  var brand  = d.brandName || d.name || "내 계정";
+  var role   = d.role || "(직업 미입력)";
+  var years  = d.years || "";
+  var life   = d.lifeRole || "";
+  var doing1 = d.doing1 || "";
+  var d1per  = d.doing1period || "";
+  var doing2 = d.doing2 || "";
+  var ach    = d.achievement || "";
+  var target = d.target || "";
+  var msg    = d.message || "";
+  var diff   = d.diff || "";
+  var style  = d.style || "따뜻하고 진솔한";
+
+  var profile =
+    "- 이름/브랜드: " + name + (brand && brand!==name ? " / @" + brand : "") + "\n" +
+    "- 직업·역할: " + role + (years ? " (" + years + ")" : "") + "\n" +
+    (life   ? "- 라이프 역할: " + life + "\n" : "") +
+    (doing1 ? "- 현재 진행 중: " + doing1 + (d1per ? " (" + d1per + ")" : "") + "\n" : "") +
+    (doing2 ? "- 추가 활동: " + doing2 + "\n" : "") +
+    (ach    ? "- 성과·결과물: " + ach + "\n" : "") +
+    (target ? "- 타겟: " + target + "\n" : "") +
+    (msg    ? "- 핵심 메시지: " + msg + "\n" : "") +
+    (diff   ? "- 차별점: " + diff + "\n" : "") +
+    "- 글 스타일: " + style;
+
+  var p1 =
+    "당신은 한국 SNS 퍼스널 브랜딩 카피라이터입니다.\n" +
+    "아래 [프로필]을 기반으로 인스타그램·스레드 프로필 소개글을 만들어주세요.\n\n" +
+    "[프로필]\n" + profile + "\n\n" +
+    "[출력 형식 — 아래 4가지를 각각 제시]\n\n" +
+    "① 인스타그램 바이오 (150자 이내)\n" +
+    "   형식: 브랜드 핵심 키워드 | 라이프 역할 / 이모지 + 스토리 한 줄 / 이모지 + 팩트 나열 / 이모지 + 현재진행 / 이모지 + 철학 한 줄\n" +
+    "   실제 예시 스타일 참고: 북크리에이션 | 육퇴 후 자기계발 / 🌙 밤 9시, 아이들 재우고 시작되는 두 번째 하루 / 📚 HRD 14년차 | 딸둘 아빠 | 전자책 3권\n\n" +
+    "② 스레드 첫 게시물 (300자 이내)\n" +
+    "   자기소개 + 이 계정을 팔로우해야 하는 이유를 담은 자기PR 게시물\n\n" +
+    "③ 카카오채널 / 오픈채팅 소개글 (200자 이내)\n\n" +
+    "④ 링크트리 한 줄 소개 (60자 이내)\n\n" +
+    "[작성 규칙]\n" +
+    "1. 모든 버전에 [프로필]의 실제 숫자(연차·기간·성과)를 반드시 1개 이상 포함.\n" +
+    "2. '성실한', '열정적인', '열심히' 같은 추상어 절대 사용 금지.\n" +
+    "3. 각 버전은 수정 없이 바로 붙여넣을 수 있는 완성본으로 제시.\n" +
+    "4. 스타일은 '" + style + "' 톤으로 작성.";
+
+  var p2 =
+    "당신은 한국 SNS 퍼스널 브랜딩 카피라이터입니다.\n" +
+    "아래 [프로필]을 기반으로 인스타그램 릴스·카드뉴스 첫 화면에 쓸 훅(Hook) 문장을 만들어주세요.\n\n" +
+    "[프로필]\n" + profile + "\n\n" +
+    "[출력 규칙]\n" +
+    "1. 훅 문장 10개를 아래 5가지 유형으로 2개씩 제시:\n" +
+    "   (A) 공감형: 타겟 독자의 현재 고민을 찌르는 한 문장\n" +
+    "   (B) 반전형: '~라고 생각했다면 틀렸다' 구조\n" +
+    "   (C) 숫자형: 구체적 숫자로 시작하는 문장\n" +
+    "   (D) 질문형: 독자가 멈추게 만드는 질문\n" +
+    "   (E) 고백형: 솔직한 실패·경험 고백으로 시작\n" +
+    "2. 각 문장은 15~40자 이내.\n" +
+    "3. 10개 아래에 '이 중 " + (d.target||"타겟 독자") + "에게 가장 잘 먹힐 TOP 3'를 골라 이유와 함께 제시.";
+
+  var p3 =
+    "당신은 한국 SNS 퍼스널 브랜딩 카피라이터입니다.\n" +
+    "아래 [프로필]을 기반으로 SNS 자기소개 게시물 3가지 버전을 만들어주세요.\n\n" +
+    "[프로필]\n" + profile + "\n\n" +
+    "[출력 — 3가지 버전]\n\n" +
+    "버전 1: 스토리텔링형 (400~600자)\n" +
+    "→ '그때 나는 ~이었다'로 시작하는 내러티브. 변화의 계기와 지금의 모습을 이야기 구조로.\n\n" +
+    "버전 2: 팩트 나열형 (200~300자)\n" +
+    "→ 불릿(•) 3~5개로 숫자·사실만 임팩트 있게. 인스타 캡션이나 카드뉴스 마지막 장에 적합.\n\n" +
+    "버전 3: 한 문장 소개 (60자 이내)\n" +
+    "→ 프로필 바이오나 명함 한 줄 소개로 쓸 수 있는 완결된 문장.\n\n" +
+    "[공통 규칙]\n" +
+    "1. 모든 버전에 [프로필]의 숫자와 고유 키워드를 반드시 포함.\n" +
+    "2. 추상어 금지. 구체적 행동·결과로만 표현.\n" +
+    "3. 스타일은 '" + style + "' 톤.";
+
+  return [
+    {id:"p1", ico:"📸", title:"인스타·스레드 프로필 소개글 4종", usage:"인스타 바이오 / 스레드 첫 게시물 / 카카오채널 소개 / 링크트리 한 줄 — 4가지를 한 번에 받습니다.", tip:"결과물을 바로 붙여넣을 수 있도록 완성본으로 만들어줍니다. 마음에 드는 것을 골라 SNS에 올려보세요.", content:p1},
+    {id:"p2", ico:"🎣", title:"릴스·카드뉴스 훅(Hook) 문장 10개", usage:"공감형·반전형·숫자형·질문형·고백형 5가지 유형으로 각 2개씩 총 10개 + TOP 3 추천", tip:"훅이 좋아야 조회수가 올라갑니다. 10개 중 가장 손이 가는 걸 골라 첫 화면에 써보세요.", content:p2},
+    {id:"p3", ico:"✍️", title:"자기소개 게시물 3가지 버전", usage:"스토리텔링형(600자) / 팩트 나열형(300자) / 한 문장(60자) — 용도에 맞게 골라 쓸 수 있습니다.", tip:"세 버전을 모두 받아두고, 긴 것은 블로그·브런치에, 짧은 것은 인스타·스레드에 각각 올리세요.", content:p3},
+  ];
+}
+
+function completion(d) {
+  var checks = [
+    ["이름",!!d.name],["직업",!!d.role],["연차",!!d.years],
+    ["활동#1",!!d.doing1],["기간",!!d.doing1period],
+    ["성과",!!d.achievement],["타겟",!!d.target],
+    ["메시지",!!d.message],["차별점",!!d.diff],
+  ];
+  var ok = checks.filter(function(c){return c[1];}).length;
+  var miss = checks.filter(function(c){return !c[1];}).map(function(c){return c[0];});
+  return {pct:Math.round(ok/checks.length*100), miss:miss};
+}
+
+function PCard({num, ico, title, usage, tip, content, done, onCopy}) {
+  return (
+    <div style={{border:"1px solid "+T.border,borderRadius:12,overflow:"hidden",marginBottom:16}}>
+      <div style={{borderBottom:"1px solid "+T.border,padding:"14px 16px",display:"flex",alignItems:"flex-start",gap:12}}>
+        <div style={{background:T.accentDim,width:36,height:36,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{ico}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{color:T.muted,fontWeight:700,fontSize:10,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:3}}>프롬프트 {num}</div>
+          <div style={{fontWeight:800,fontSize:14,color:T.ink,lineHeight:1.35,marginBottom:4}}>{title}</div>
+          <div style={{color:T.muted,fontSize:12,lineHeight:1.55}}>{usage}</div>
+        </div>
+        <button onClick={onCopy}
+          style={{background:done?T.good:T.accent,color:"#0D1117",border:"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:800,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap",transition:"background 0.2s"}}>
+          {done ? "✓ 복사됨" : "복사"}
+        </button>
+      </div>
+      <div style={{background:"#0D1117",padding:16}}>
+        <pre style={{fontSize:11,lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",maxHeight:220,overflowY:"auto",margin:0,color:"#8B949E",fontFamily:"'SF Mono',ui-monospace,Menlo,monospace"}}>{content}</pre>
+      </div>
+      {tip && (
+        <div style={{borderTop:"1px solid "+T.border,padding:"8px 16px",display:"flex",alignItems:"flex-start",gap:6}}>
+          <span style={{fontSize:11,flexShrink:0}}>💡</span>
+          <p style={{color:T.muted,fontSize:11,margin:0,lineHeight:1.6}}>{tip}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function S4({d, copied, onCopy}) {
+  var prompts = useMemo(function(){return buildPrompts(d);},[d]);
+  var comp = useMemo(function(){return completion(d);},[d]);
+  return (
+    <>
+      <div style={{marginBottom:24}}>
+        <div style={{color:T.accent,fontWeight:700,fontSize:10,letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:6}}>STEP 04</div>
+        <h2 style={{fontWeight:800,fontSize:24,color:T.ink,margin:"0 0 8px",letterSpacing:"-0.02em"}}>브랜딩 카드 생성</h2>
+        <p style={{color:T.muted,fontSize:13,margin:0,lineHeight:1.7}}>입력한 정보가 3가지 SNS 브랜딩 프롬프트로 완성됐습니다. 복사 → Claude 새 대화창 붙여넣기.</p>
+      </div>
+
+      <div style={{background:comp.pct>=80?T.goodDim:T.goldDim,border:"1px solid "+(comp.pct>=80?T.good:T.gold),borderRadius:10,padding:"11px 14px",marginBottom:20,display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:20,flexShrink:0}}>{comp.pct>=80?"✅":"⚠️"}</span>
+        <div>
+          <div style={{color:T.ink,fontWeight:700,fontSize:13}}>입력 완성도 {comp.pct}%</div>
+          <div style={{color:T.muted,fontSize:12,marginTop:2}}>
+            {comp.pct>=80
+              ? "충분합니다. 프롬프트를 그대로 사용하세요."
+              : "비어 있는 항목: "+comp.miss.join(", ")}
+          </div>
+        </div>
+      </div>
+
+      {prompts.map(function(p,i){
+        return <PCard key={p.id} num={i+1} ico={p.ico} title={p.title} usage={p.usage} tip={p.tip} content={p.content} done={copied===p.id} onCopy={function(){onCopy(p.content,p.id);}}/>;
+      })}
+
+      <div style={{background:T.card2,border:"1px solid "+T.border,borderRadius:12,padding:20,marginTop:8}}>
+        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+          <span style={{fontSize:18,flexShrink:0}}>🚀</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:13,color:T.ink,marginBottom:8}}>다음 단계로 가고 싶다면</div>
+            <ul style={{color:T.muted,fontSize:12,lineHeight:1.9,paddingLeft:16,margin:0}}>
+              <li>결과물을 받은 후 <strong style={{color:T.ink}}>"더 짧고 임팩트 있게 줄여줘"</strong> 또는 <strong style={{color:T.ink}}>"더 전문적인 톤으로 다시 써줘"</strong>로 반복 수정하세요.</li>
+              <li>완성된 바이오를 3~5명에게 보여주고 <strong style={{color:T.ink}}>"이 사람이 뭐 하는 사람인지 바로 알겠어?"</strong>를 물어보세요.</li>
+              <li>본격적인 이력서·자기소개서가 필요하다면 <strong style={{color:T.ink}}>퍼스널 브랜딩 풀 버전</strong> 툴을 사용하세요.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <ChannelCard/>
+    </>
+  );
+}
+
+/* ── Main App ────────────────────────────────────────── */
+function App() {
+  var _s = useState(1); var step = _s[0]; var setStep = _s[1];
+  var _d = useState(INIT); var data = _d[0]; var setData = _d[1];
+  var _c = useState(null); var copied = _c[0]; var setCopied = _c[1];
+
+  var upd = useCallback(function(k, v){ setData(function(p){ return setIn(p,k,v); }); },[]);
+
+  function copyPrompt(text, id) {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(function(){setCopied(null);},1800);
+  }
+
+  var pct = step/STEPS.length*100;
+
+  return (
+    <div style={{background:T.bg,minHeight:"100vh",color:T.ink}}>
+      {/* Header */}
+      <header style={{borderBottom:"1px solid "+T.border,background:T.card,position:"sticky",top:0,zIndex:50}}>
+        <div style={{maxWidth:720,margin:"0 auto",padding:"14px 20px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+            <div style={{background:"linear-gradient(135deg,#58A6FF,#2997FF)",width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>✨</div>
+            <div>
+              <div style={{fontWeight:800,fontSize:14,letterSpacing:"-0.02em"}}>SNS 한 줄 브랜딩 카드 생성기</div>
+              <div style={{color:T.muted,fontSize:11,marginTop:1}}>인스타·스레드 프로필 · 릴스 훅 · 자기소개 게시물 &nbsp;<span style={{color:"#484F58"}}>by</span>&nbsp;<a href="https://www.instagram.com/bookcreation_" target="_blank" style={{color:"#58A6FF",textDecoration:"none",fontWeight:700}}>@bookcreation_</a></div>
+            </div>
+          </div>
+          {/* Step pills */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {STEPS.map(function(s){
+              var active = s.id===step;
+              var done = s.id<step;
+              return (
+                <button key={s.id} onClick={function(){setStep(s.id);}}
+                  style={{border:"none",borderRadius:100,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer",
+                    background:active?"#58A6FF":done?"rgba(88,166,255,0.15)":"rgba(255,255,255,0.06)",
+                    color:active?"#0D1117":done?T.accent:T.muted}}>
+                  {done?"✓ ":""}{s.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{height:2,background:T.border,marginTop:12,borderRadius:1}}>
+            <div style={{width:pct+"%",height:"100%",background:"linear-gradient(90deg,#58A6FF,#2997FF)",transition:"width 0.4s ease",borderRadius:1}}/>
+          </div>
+        </div>
+      </header>
+
+      {/* Content */}
+      <div style={{maxWidth:720,margin:"0 auto",padding:"28px 20px"}}>
+        <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:16,padding:32}}>
+          {step===1 && <S1 d={data} u={upd}/>}
+          {step===2 && <S2 d={data} u={upd}/>}
+          {step===3 && <S3 d={data} u={upd}/>}
+          {step===4 && <S4 d={data} copied={copied} onCopy={copyPrompt}/>}
+
+          {/* Nav */}
+          <div style={{borderTop:"1px solid "+T.border,marginTop:28,paddingTop:18,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <button onClick={function(){setStep(function(s){return Math.max(1,s-1);});}} disabled={step===1}
+              style={{border:"1px solid "+T.border,background:"transparent",color:step===1?T.faint:T.ink,borderRadius:8,padding:"9px 18px",fontSize:13,fontWeight:600,cursor:step===1?"not-allowed":"pointer"}}>
+              ← 이전
+            </button>
+            <span style={{color:T.faint,fontSize:11}}>{step} / {STEPS.length}</span>
+            {step<STEPS.length
+              ? <button onClick={function(){setStep(function(s){return Math.min(STEPS.length,s+1);});}}
+                  style={{background:"#58A6FF",color:"#0D1117",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:800,cursor:"pointer"}}>
+                  다음 →
+                </button>
+              : <button onClick={function(){setStep(1);}}
+                  style={{border:"1px solid "+T.border,background:"transparent",color:T.ink,borderRadius:8,padding:"9px 18px",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+                  처음으로
+                </button>
+            }
+          </div>
+        </div>
+      </div>
+      <SiteFooter/>
+    </div>
+  );
+}
+
+
+/* ── Channel promotion card ─────────────────────────── */
+var CHANNELS = [
+  {ico:"📸", label:"인스타그램", handle:"@bookcreation_", sub:"육퇴 후 자기계발 · 매일 기록", url:"https://www.instagram.com/bookcreation_", color:"#E1306C"},
+  {ico:"🧵", label:"스레드",    handle:"@bookcreation_", sub:"짧은 생각 · 일상 인사이트",   url:"https://www.threads.com/@bookcreation_", color:"#58A6FF"},
+  {ico:"💬", label:"카카오채널", handle:"요셉쌤 AI문서연구소", sub:"이력서 첨삭 · AI 문서 작성 · 취업 전략", url:"https://pf.kakao.com/_xaGhbX", color:"#FEE500"},
+  {ico:"✍️", label:"브런치",    handle:"@bookcreation",  sub:"HRD 인사이트 · 글쓰기 에세이", url:"https://brunch.co.kr/@bookcreation", color:"#00B4D8"},
+  {ico:"📝", label:"네이버 블로그", handle:"bookcreation", sub:"강의 후기 · 실전 정보",       url:"https://blog.naver.com/bookcreation", color:"#3FB950"},
+];
+
+function ChannelCard() {
+  var [hovered, setHovered] = useState(null);
+  var grid = [
+    {ico:"📸", label:"인스타그램",    handle:"@bookcreation_",      url:"https://www.instagram.com/bookcreation_",   color:"#E1306C"},
+    {ico:"🧵", label:"스레드",        handle:"@bookcreation_",      url:"https://www.threads.com/@bookcreation_",    color:"#58A6FF"},
+    {ico:"💬", label:"카카오채널",    handle:"요셉쌤 AI문서연구소", url:"https://pf.kakao.com/_xaGhbX",              color:"#FEE500"},
+    {ico:"📝", label:"네이버 블로그", handle:"bookcreation",         url:"https://blog.naver.com/bookcreation",       color:"#3FB950"},
+  ];
+  return (
+    <div style={{background:"#0D1117",border:"1px solid #30363D",borderRadius:16,overflow:"hidden",marginTop:24}}>
+
+      {/* TOP — 프로필 + 설명 통합 */}
+      <div style={{background:"linear-gradient(135deg,#161B22,#1A2233)",borderBottom:"1px solid #30363D",padding:"20px 22px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:14}}>
+          <div style={{width:48,height:48,borderRadius:"50%",background:"linear-gradient(135deg,#1652A8,#58A6FF)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:22}}>✨</div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:800,fontSize:16,color:"#E6EDF3",letterSpacing:"-0.02em",lineHeight:1.25}}>홍요셉 · bookcreation_</div>
+            <div style={{color:"#8B949E",fontSize:11,marginTop:3,lineHeight:1.5}}>HRD 14년차 · 육퇴 후 자기계발 · 종이책 1권, 전자책 3권 · 매일 500자</div>
+          </div>
+          <a href="https://hongyosep-profile.vercel.app" target="_blank"
+            style={{background:"#58A6FF",color:"#0D1117",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:800,textDecoration:"none",flexShrink:0,display:"inline-flex",alignItems:"center",gap:5,whiteSpace:"nowrap"}}>
+            🔗 프로필
+          </a>
+        </div>
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.06)",paddingTop:14}}>
+          <p style={{color:"#8B949E",fontSize:12,lineHeight:1.8,margin:0}}>
+            이 툴을 만든 <strong style={{color:"#E6EDF3"}}>홍요셉 강사</strong>는 14년차 HRD 교육기획자이자 퍼스널브랜딩 강사입니다.<br/>
+            <strong style={{color:"#58A6FF"}}>강의 문의 · 이력서 첨삭 · 취업 전략</strong>이 필요하다면 아래 채널로 편하게 연락주세요.
+          </p>
+        </div>
+      </div>
+
+      {/* MIDDLE — 채널 2×2 그리드 */}
+      <div style={{padding:"16px 22px 16px"}}>
+        <div style={{color:"#484F58",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:10}}>채널 바로가기</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {grid.map(function(ch, i){
+            var isHov = hovered===i;
+            return (
+              <a key={ch.label} href={ch.url} target="_blank"
+                onMouseEnter={function(){setHovered(i);}}
+                onMouseLeave={function(){setHovered(null);}}
+                style={{textDecoration:"none",border:"1px solid "+(isHov?ch.color:"#30363D"),borderRadius:10,padding:"11px 13px",
+                  background:isHov?"rgba("+hexToRgb(ch.color)+",0.07)":"#161B22",transition:"all 0.18s",display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:20,flexShrink:0}}>{ch.ico}</span>
+                <div style={{minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:12,color:"#E6EDF3",lineHeight:1.2}}>{ch.label}</div>
+                  <div style={{fontSize:10,color:"#8B949E",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ch.handle}</div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* BOTTOM — 카카오채널 CTA 배너 */}
+      <a href="https://pf.kakao.com/_xaGhbX" target="_blank"
+        style={{display:"flex",alignItems:"center",gap:14,background:"rgba(254,229,0,0.08)",borderTop:"1px solid rgba(254,229,0,0.2)",padding:"14px 22px",textDecoration:"none",transition:"background 0.18s",cursor:"pointer"}}
+        onMouseEnter={function(e){e.currentTarget.style.background="rgba(254,229,0,0.13)";}}
+        onMouseLeave={function(e){e.currentTarget.style.background="rgba(254,229,0,0.08)";}}>
+        <div style={{width:38,height:38,borderRadius:10,background:"rgba(254,229,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>💬</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontWeight:800,fontSize:13,color:"#FEE500",lineHeight:1.3}}>요셉쌤 AI문서연구소 카카오채널</div>
+          <div style={{fontSize:11,color:"rgba(254,229,0,0.55)",marginTop:3,lineHeight:1.4}}>이력서 첨삭 · AI 문서 작성 · 취업 전략 — 요셉쌤이 직접 답변합니다</div>
+        </div>
+        <div style={{color:"#FEE500",fontSize:12,fontWeight:800,flexShrink:0,whiteSpace:"nowrap"}}>채널 추가 →</div>
+      </a>
+
+    </div>
+  );
+}
+
+function hexToRgb(hex) {
+  var r = parseInt(hex.slice(1,3),16);
+  var g = parseInt(hex.slice(3,5),16);
+  var b = parseInt(hex.slice(5,7),16);
+  return r+","+g+","+b;
+}
+
+/* ── Site footer ─────────────────────────────────────── */
+function SiteFooter() {
+  return (
+    <footer style={{borderTop:"1px solid #21262D",marginTop:40,padding:"24px 20px",textAlign:"center"}}>
+      <div style={{color:"#484F58",fontSize:11,lineHeight:2}}>
+        <span style={{color:"#8B949E",fontWeight:700}}>홍요셉 · bookcreation_</span>
+        {"  ·  "}
+        <a href="https://www.instagram.com/bookcreation_" target="_blank" style={{color:"#484F58",textDecoration:"none"}}>Instagram</a>
+        {"  ·  "}
+        <a href="https://brunch.co.kr/@bookcreation" target="_blank" style={{color:"#484F58",textDecoration:"none"}}>Brunch</a>
+        {"  ·  "}
+        <a href="https://blog.naver.com/bookcreation" target="_blank" style={{color:"#484F58",textDecoration:"none"}}>Blog</a>
+        {"  ·  "}
+        <a href="https://www.threads.com/@bookcreation_" target="_blank" style={{color:"#484F58",textDecoration:"none"}}>Threads</a>
+        <br/>
+        <span>© 2026 bookcreation_ · 매일 1%씩, 결국 다른 사람이 됩니다</span>
+      </div>
+    </footer>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>

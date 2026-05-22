@@ -418,6 +418,11 @@ function App() {
     setTimeout(function(){setCopied(null);},1800);
   }
 
+  function goToStep(n) {
+    setStep(n);
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
   var pct = step/STEPS.length*100;
 
   return (
@@ -438,7 +443,7 @@ function App() {
               var active = s.id===step;
               var done = s.id<step;
               return (
-                <button key={s.id} onClick={function(){setStep(s.id);}}
+                <button key={s.id} onClick={function(){goToStep(s.id);}}
                   style={{border:"none",borderRadius:100,padding:"5px 12px",fontSize:11,fontWeight:700,cursor:"pointer",
                     background:active?"#58A6FF":done?"rgba(88,166,255,0.15)":"rgba(255,255,255,0.06)",
                     color:active?"#0D1117":done?T.accent:T.muted}}>
@@ -463,17 +468,17 @@ function App() {
 
           {/* Nav */}
           <div style={{borderTop:"1px solid "+T.border,marginTop:28,paddingTop:18,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <button onClick={function(){setStep(function(s){return Math.max(1,s-1);});}} disabled={step===1}
+            <button onClick={function(){goToStep(Math.max(1,step-1));}} disabled={step===1}
               style={{border:"1px solid "+T.border,background:"transparent",color:step===1?T.faint:T.ink,borderRadius:8,padding:"9px 18px",fontSize:13,fontWeight:600,cursor:step===1?"not-allowed":"pointer"}}>
               ← 이전
             </button>
             <span style={{color:T.faint,fontSize:11}}>{step} / {STEPS.length}</span>
             {step<STEPS.length
-              ? <button onClick={function(){setStep(function(s){return Math.min(STEPS.length,s+1);});}}
+              ? <button onClick={function(){goToStep(step+1);}}
                   style={{background:"#58A6FF",color:"#0D1117",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:800,cursor:"pointer"}}>
                   다음 →
                 </button>
-              : <button onClick={function(){setStep(1);}}
+              : <button onClick={function(){goToStep(1);}}
                   style={{border:"1px solid "+T.border,background:"transparent",color:T.ink,borderRadius:8,padding:"9px 18px",fontSize:13,fontWeight:600,cursor:"pointer"}}>
                   처음으로
                 </button>
